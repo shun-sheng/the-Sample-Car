@@ -43,7 +43,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         if (g_rx_byte >= '1' && g_rx_byte <= '7') {
             g_move_key = g_rx_byte;
         }
-        else  (g_rx_byte == '8' || g_rx_byte == '9' || g_rx_byte == '0') {
+        if  (g_rx_byte == '8' || g_rx_byte == '9' || g_rx_byte == '0')
+        {
             g_arm_key = g_rx_byte;
         }
 
