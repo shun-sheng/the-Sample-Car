@@ -33,16 +33,16 @@ enable_language(C ASM)
 
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME}
-        User/Start/Src/All_Init.c
-        User/Start/Inc/All_Init.h
-        User/Bsp/Src/sg90.c
-        User/Bsp/Inc/sg90.h
+        User/Start/Src/CYT_IRQN.c
+        User/Start/Inc/CYT_IRQN.h
+        User/App/Src/Chassic.c
+        User/App/Inc/Chassic.h
         User/App/Src/Arm.c
         User/App/Inc/Arm.h
         User/Bsp/Src/Motor.c
         User/Bsp/Inc/Motor.h
-        User/Start/Src/CYT_IRQN.c
-        User/Start/Inc/CYT_IRQN.h
+        User/Bsp/Src/sg90.c
+        User/Bsp/Inc/sg90.h
 )
 
 # Add STM32CubeMX generated sources

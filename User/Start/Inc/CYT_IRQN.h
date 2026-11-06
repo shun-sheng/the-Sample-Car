@@ -1,14 +1,13 @@
 //
-// Created by lenovo on 2026/11/6.
+// CYT_IRQN.h - 初始化入口
 //
 
 #ifndef SAMPLE_CAR_CYT_IRQN_H
 #define SAMPLE_CAR_CYT_IRQN_H
 
-#include "All_Init.h"
 #include "main.h"
-#include "stdint.h"
-#include "task.h"
-#include "cmsis_os.h"
+
+/* 在 main() 的 USER CODE BEGIN 2 里调用（调度器启动前） */
+void EverythingInit(void);
 
 #endif //SAMPLE_CAR_CYT_IRQN_H

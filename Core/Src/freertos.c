@@ -108,19 +108,19 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityIdle, 0, 128);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of MoveTask */
-  osThreadDef(MoveTask, StartMoveTask, osPriorityIdle, 0, 256);
+  osThreadDef(MoveTask, StartMoveTask, osPriorityBelowNormal, 0, 256);
   MoveTaskHandle = osThreadCreate(osThread(MoveTask), NULL);
 
   /* definition and creation of BlueToothTask */
-  osThreadDef(BlueToothTask, StartBlueToothTask, osPriorityIdle, 0, 256);
+  osThreadDef(BlueToothTask, StartBlueToothTask, osPriorityNormal, 0, 256);
   BlueToothTaskHandle = osThreadCreate(osThread(BlueToothTask), NULL);
 
   /* definition and creation of ArmTask */
-  osThreadDef(ArmTask, StartArmTask, osPriorityIdle, 0, 256);
+  osThreadDef(ArmTask, StartArmTask, osPriorityLow, 0, 256);
   ArmTaskHandle = osThreadCreate(osThread(ArmTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
