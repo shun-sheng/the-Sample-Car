@@ -191,10 +191,32 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
+  /* 时钟/HSE 初始化失败会卡在这里：让 PB12（板载 LED）【快闪】。
+   * 判读：
+   *   PB12 快闪个不停  -> 卡在 Error_Handler，就是时钟没起来
+   *   PB12 慢闪（1 秒）-> 程序正常在跑（CYT_IRQN.c 的心跳）
+   *   PB12 完全不闪    -> 程序根本没运行（供电/烧录/复位问题）
+   */
   {
+    GPIO_InitTypeDef gpio = {0};
+    volatile uint32_t i;
+
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    gpio.Pin   = GPIO_PIN_12;
+    gpio.Mode  = GPIO_MODE_OUTPUT_PP;
+    gpio.Pull  = GPIO_NOPULL;
+    gpio.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(GPIOB, &gpio);
+
+    __disable_irq();
+    for (;;)
+    {
+      HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_12);
+      for (i = 0; i < 100000u; i++)
+      {
+        /* 粗延时，做出"快闪"效果 */
+      }
+    }
   }
   /* USER CODE END Error_Handler_Debug */
 }
