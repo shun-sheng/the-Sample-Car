@@ -64,6 +64,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/User/Start/Inc
         ${CMAKE_CURRENT_SOURCE_DIR}/User/Bsp/Inc
         ${CMAKE_CURRENT_SOURCE_DIR}/User/App/Inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/User/Algorithm/Inc
 )
 
 # Add project symbols (macros)

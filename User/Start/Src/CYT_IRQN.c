@@ -23,16 +23,14 @@
 #include "Chassic.h"
 #include "sg90.h"
 
-/* 舵机自检：改成 1 后重新烧录，不用蓝牙，上电就自动扫角
- *   用来单独判断"舵机本体能转多大"：
- *     拆掉机械臂/连杆扫角 -> 能 0~180 转满 = 舵机好的，问题在机械负载
- *     转不满             -> 舵机本体/供电/信号问题
- *   扫的是 SG001(PA6) 和 SG002(PA7) 两个通道，看哪个是你的大臂即可 */
-#define SERVO_SWEEP_TEST 0
+#define BT_DISCONNECTED 0
+#define BT_SILENT 1
+#define BT_CONNECTED 2
 
-#define SERVO_SWEEP_CH1  1      /* 1 = 一起扫 SG001+SG002 */
-#define SERVO_SWEEP_STEP 10     /* 每步 10 度 */
-#define SERVO_SWEEP_MS   300    /* 每步停 300ms */
+#define BT_DELAY_MS 20
+#define BT_TIMEOUT_MS 500
+uint8_t g_bl_data=BT_DISCONNECTED;
+uint32_t g_bl_time;
 
 static uint8_t g_rx_byte;
 
@@ -46,15 +44,11 @@ static uint8_t Key_Normalize(uint8_t byte)
     if (byte >= '0' && byte <= '9') {
         return byte;
     }
-    if (byte >= 0x41 && byte <= 0x5a) {
+    if (byte >= 'a' && byte <= 'z') {
         return byte;
     }
-    if (byte >= 'a' && byte <= 'z') {
-        return (uint8_t)(byte - 'a' + 'A');
-    }
-    if (byte <= 9) {
-        return (uint8_t)('0' + byte);
-    }
+
+
     return 0;
 }
 
@@ -72,7 +66,10 @@ void EverythingInit(void)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     uint8_t key;
-
+    if (g_bl_data!=BT_CONNECTED) {
+        HAL_UART_Receive_IT(&huart1, &g_rx_byte, 1);
+        return;
+    }
     if (huart->Instance == USART1) {
         key = Key_Normalize(g_rx_byte);
 
@@ -94,40 +91,71 @@ void StartDefaultTask(void const * argument)
 {
     (void)argument;
 
-#if SERVO_SWEEP_TEST
-    /* 舵机自检：SG001 + SG002 一起慢慢扫 0 -> 180 -> 0 */
-    for (;;) {
-        uint8_t a;
-
-        for (a = 0; a <= 180; a += SERVO_SWEEP_STEP) {
-            SG001_SetAngle(a);
-            SG002_SetAngle(a);
-            osDelay(SERVO_SWEEP_MS);
-        }
-        for (a = 180; a >= SERVO_SWEEP_STEP; a -= SERVO_SWEEP_STEP) {
-            SG001_SetAngle(a);
-            SG002_SetAngle(a);
-            osDelay(SERVO_SWEEP_MS);
-        }
-    }
-#else
     for (;;) {
         osDelay(1000);
     }
-#endif
+
 }
 
-/* 蓝牙任务：按键已经在中断里分好了，这里暂时用不到 */
+
 void StartBlueToothTask(void const * argument)
 {
     (void)argument;
 
     for (;;) {
-        osDelay(1000);
-    }
+        uint8_t state;
+
+        state=(HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_11)==GPIO_PIN_SET);
+
+        switch (g_bl_data) {
+            case BT_DISCONNECTED: {
+                if (state) {
+                    g_move_key=0;
+                    g_arm_key=0;
+                    g_bl_time=0;
+                    Chassic_Stop();
+                    g_bl_data=BT_SILENT;
+                };
+            }
+                break;
+            case BT_SILENT: {
+                if (!state) {
+                    g_move_key=0;
+                    g_arm_key=0;
+                    g_bl_time=0;
+                    Chassic_Stop();
+                    g_bl_data=BT_DISCONNECTED;
+                }
+                g_bl_time+=BT_DELAY_MS;
+                if (g_bl_time>=BT_TIMEOUT_MS) {
+                    g_bl_data=BT_CONNECTED;
+                }
+
+            }
+            break;
+
+            case BT_CONNECTED: {
+                if (!state) {
+                    g_move_key=0;
+                    g_arm_key=0;
+                    g_bl_time=0;
+                    Chassic_Stop();
+                    g_bl_data=BT_DISCONNECTED;
+                }
+            }
+            break;
+
+            default: {
+                g_bl_data=BT_DISCONNECTED;
+            }
+        }
+            osDelay(BT_DELAY_MS);
+        }
+        // osDelay(1000);
 }
 
-/* 底盘任务：处理 1~7 */
+
+
 void StartMoveTask(void const * argument)
 {
     uint8_t key;
@@ -151,7 +179,7 @@ void StartMoveTask(void const * argument)
     }
 }
 
-/* 机械臂任务：处理 8 / 9 / 0 */
+
 void StartArmTask(void const * argument)
 {
     uint8_t key;
